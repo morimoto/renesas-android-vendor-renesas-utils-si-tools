@@ -330,7 +330,9 @@ static int si46xx_get_part_info()
 
 	si46xx_write_data(SI46XX_GET_PART_INFO,&zero,1);
 	ret = si46xx_read_reply(buf, sizeof(buf));
+	if(ret)
 		return ret;
+
 	printf("si46xx_get_part_info answer:\n");
 	printf("CHIPREV:\t0x%02x\n", buf[4]);
 	printf("ROMID:\t0x%02x\n", buf[5]);
@@ -515,7 +517,7 @@ int si46xx_dab_get_digital_service_list()
 
 int si46xx_dab_get_audio_info(void)
 {
-	int ret;
+	int ret = 0;
 	uint8_t zero = 0;
 	char buf[9];
 
@@ -540,6 +542,8 @@ int si46xx_dab_get_audio_info(void)
 	}
 	printf("SBR: %d\n", (buf[8] & 0x04) ? 1:0);
 	printf("PS: %d\n", (buf[8] & 0x08) ? 1:0);
+
+	return ret;
 }
 
 void si46xx_dab_get_subchannel_info(void)
@@ -1349,7 +1353,7 @@ int si46xx_init_patch(void)
 			}
 		}
 
-		ret = store_image_from_file(FIRMWARE_PATH "rom00_patch.016.bin", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "patch.bin", 0);
 		if (ret) {
 			printf("Patch load failed\n");
 			return ret;
@@ -1388,11 +1392,11 @@ int si46xx_init_mode(int mode)
 	}
 
 	if (mode == SI46XX_MODE_FM) {
-		ret = store_image_from_file(FIRMWARE_PATH "fmhd_radio_4_0_12.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "fm.bif", 0);
 	} else if (mode == SI46XX_MODE_DAB) {
-		ret = store_image_from_file(FIRMWARE_PATH "dab_radio_4_0_5.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "dab.bif", 0);
 	} else if (mode == SI46XX_MODE_AM) {
-		ret = store_image_from_file(FIRMWARE_PATH "amhd_radio_2_0_11.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "am.bif", 0);
 	} else {
 		printf("Mode %d not supported\n", mode);
 	}

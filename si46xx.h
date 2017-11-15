@@ -22,7 +22,7 @@
 
 #define SPI_DEV_PATH		"/dev/spidev32766.0"
 #define SPI_DEV_SPEED		(10 *1000 * 1000)
-#define FIRMWARE_PATH		"/lib/firmware/si46xx/"
+#define FIRMWARE_PATH		"/vendor/etc/firmware/si46xx/"
 
 #define SI46XX_MODE_UNK		0
 #define SI46XX_MODE_BOOT	1
