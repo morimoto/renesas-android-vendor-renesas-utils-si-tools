@@ -1,3 +1,5 @@
+# Include only for Renesas ones.
+ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
 LOCAL_PATH := $(call my-dir)
 
@@ -16,3 +18,4 @@ LOCAL_MODULE                := si_ctl
 LOCAL_MODULE_TAGS           := optional
 LOCAL_C_INCLUDES            := $(LOCAL_PATH)
 include $(BUILD_EXECUTABLE)
+endif # Include only for Renesas ones.
