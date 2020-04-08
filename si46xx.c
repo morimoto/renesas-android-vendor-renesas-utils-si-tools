@@ -799,7 +799,7 @@ static int store_image_from_file(char *filename)
 		goto fail;
 	}
 
-	printf("Loading: %s (%d bytes)\n", filename, len);
+	printf("Loading: %s (%ld bytes)\n", filename, len);
 
 	while (remaining_bytes) {
 		if (remaining_bytes >= FW_LOAD_BUF)
