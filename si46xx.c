@@ -143,7 +143,6 @@ static int si46xx_write_data(uint8_t cmd,
 		uint16_t len)
 {
 	int ret;
-	uint8_t timeout;
 	uint8_t *data;
 
 	/* check busy */
@@ -170,33 +169,6 @@ static int si46xx_write_data(uint8_t cmd,
 	ret = SPI_Write(data, len + 1, NULL, 0, 1);
 	free(data);
 	return ret;
-}
-
-static uint16_t si46xx_read_dynamic__(uint8_t *data)
-{
-	int ret;
-	uint8_t zero = 0;
-	uint16_t cnt;
-
-	CS_HIGH();
-	msleep(1); // make sure cs is high for 20us
-	CS_LOW();
-	ret = SPI_Write(&zero, 1, NULL, 0, 0);
-	if (ret < 0)
-		goto exit;
-	ret = SPI_Write(NULL, 0, data, 6, 0);
-	if (ret < 0)
-		goto exit;
-	cnt = ((uint16_t)data[5] << 8) | (uint16_t)data[4];
-	if(cnt > 3000)
-		cnt = 0;
-	ret = SPI_Write(NULL, 0, &data[6], cnt, 1);
-exit:
-	CS_HIGH();
-	msleep(1); // make sure cs is high for 20us
-	if (ret < 0)
-		return ret;
-	return cnt + 6;
 }
 
 static uint16_t si46xx_read_dynamic(uint8_t *data)
@@ -797,38 +769,9 @@ static int si46xx_load_init()
 	return si46xx_read_reply(buf, sizeof(buf));
 }
 
-static int store_image(const uint8_t *data, uint32_t len, uint8_t wait_for_int)
-{
-	int ret;
-	uint32_t remaining_bytes = len;
-	uint32_t count_to;
-
-	ret = si46xx_load_init();
-	if (ret) {
-		printf("LOAD_INIT failed: %d\n", ret);
-		return ret;
-	}
-	while(remaining_bytes){
-		if(remaining_bytes >= 2048){
-			count_to = 2048;
-		}else{
-			count_to = remaining_bytes;
-		}
-
-		si46xx_write_host_load_data(SI46XX_HOST_LOAD,
-			data + (len - remaining_bytes), count_to);
-		remaining_bytes -= count_to;
-		msleep(1);
-	}
-	msleep(4); // wait 4ms (datasheet)
-	ret = si46xx_read(NULL, 4);
-	msleep(4); // wait 4ms (datasheet)
-	return ret;
-}
-
 //#define FW_LOAD_BUF	256
 #define FW_LOAD_BUF	4096
-static int store_image_from_file(char *filename, uint8_t wait_for_int)
+static int store_image_from_file(char *filename)
 {
 	int ret = 0;
 	long remaining_bytes;
@@ -1274,7 +1217,6 @@ int si46xx_flash_write(int offset, char *ptr, int size, uint32_t crc, int verify
 int si46xx_flash_load(int offset)
 {
 	int i = 0;
-	int ret;
 	uint8_t data[12];
 	printf("si46xx_flash_load(0x%08x)\n", offset);
 
@@ -1352,7 +1294,7 @@ int si46xx_init_patch(void)
 			}
 		}
 
-		ret = store_image_from_file(FIRMWARE_PATH "patch.bin", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "patch.bin");
 		if (ret) {
 			printf("Patch load failed\n");
 			return ret;
@@ -1364,8 +1306,6 @@ int si46xx_init_patch(void)
 int si46xx_init_mode(int mode)
 {
 	int ret;
-	int cur_mode;
-	uint8_t read_data[30];
 	printf("si46xx_init_mode(%d)\n", mode);
 #if 0
 	/* reset si46xx  */
@@ -1391,11 +1331,11 @@ int si46xx_init_mode(int mode)
 	}
 
 	if (mode == SI46XX_MODE_FM) {
-		ret = store_image_from_file(FIRMWARE_PATH "fm.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "fm.bif");
 	} else if (mode == SI46XX_MODE_DAB) {
-		ret = store_image_from_file(FIRMWARE_PATH "dab.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "dab.bif");
 	} else if (mode == SI46XX_MODE_AM) {
-		ret = store_image_from_file(FIRMWARE_PATH "am.bif", 0);
+		ret = store_image_from_file(FIRMWARE_PATH "am.bif");
 	} else {
 		printf("Mode %d not supported\n", mode);
 	}
