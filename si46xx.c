@@ -1323,7 +1323,7 @@ int si46xx_init(int argc, char **argv)
 			return addr;
 		}
 
-		ret = i2c_init(argv[1], addr, 0 /* don't care now */);
+		ret = i2c_init(argv[1], addr);
 		if (ret) {
 			printf("Setup I2C error: %d\n", ret);
 			return ret;

@@ -126,7 +126,7 @@ int i2c_io(unsigned char *out, int out_len, unsigned char *in, int in_len)
 	return 0;
 }
 
-int i2c_init(char* bus, int addr, int speed)
+int i2c_init(char* bus, int addr)
 {
 	int fd ;
 	int ret;
