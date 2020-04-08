@@ -55,7 +55,7 @@
 uint8_t dab_num_channels;
 int wait = 0;
 
-int SPI_Write(char *out, int out_len, char *in, int in_len, int deact)
+int SPI_Write(uint8_t *out, int out_len, uint8_t *in, int in_len, int deact)
 {
 	if (spi_fd)
 		return spi_io(out, in, MAX(in_len, out_len), deact);
@@ -222,7 +222,7 @@ static char *pup_states_names[] = {
 	"application"
 };
 
-int si46xx_check_reply(char *buf)
+int si46xx_check_reply(uint8_t *buf)
 {
 	int ret = 0;
 	if (buf[0] & (1 << 7))
@@ -253,7 +253,7 @@ int si46xx_check_reply(char *buf)
 	return ret;
 }
 
-int si46xx_read_reply(char *buf, int len)
+int si46xx_read_reply(uint8_t *buf, int len)
 {
 	int ret;
 
@@ -269,7 +269,7 @@ int si46xx_get_sys_state(void)
 {
 	int ret;
 	uint8_t zero = 0;
-	char buf[6];
+	uint8_t buf[6];
 	uint8_t mode;
 
 	si46xx_write_data(SI46XX_GET_SYS_STATE, &zero, 1);
@@ -296,7 +296,7 @@ int si46xx_get_sys_mode(void)
 {
 	int ret;
 	uint8_t zero = 0;
-	char buf[6];
+	uint8_t buf[6];
 	uint8_t mode;
 
 	si46xx_write_data(SI46XX_GET_SYS_STATE, &zero, 1);
@@ -326,7 +326,7 @@ static int si46xx_get_part_info()
 {
 	int ret;
 	uint8_t zero = 0;
-	char buf[22];
+	uint8_t buf[22];
 
 	si46xx_write_data(SI46XX_GET_PART_INFO,&zero,1);
 	ret = si46xx_read_reply(buf, sizeof(buf));
@@ -445,9 +445,8 @@ static void si46xx_dab_parse_service_list(uint8_t *data, uint16_t len)
 
 void si46xx_dab_get_ensemble_info()
 {
-	char buf[22];
-	char data;
-	uint8_t timeout;
+	uint8_t buf[22];
+	uint8_t timeout, data;
 	char label[17];
 
 	//data[0] = (1<<4) | (1<<0); // force_wb, low side injection
@@ -502,7 +501,7 @@ int si46xx_dab_get_digital_service_list()
 	uint8_t zero = 0;
 	uint16_t len;
 	uint16_t timeout;
-	char buf[2047+6];
+	uint8_t buf[2047+6]; /* TODO: fix this stack allocation */
 
 	printf("si46xx_dab_get_digital_service_list()\n");
 	timeout = 100;
@@ -519,7 +518,7 @@ int si46xx_dab_get_audio_info(void)
 {
 	int ret = 0;
 	uint8_t zero = 0;
-	char buf[9];
+	uint8_t buf[9];
 
 	printf("si46xx_dab_get_audio_info()\n");
 	si46xx_write_data(SI46XX_DAB_GET_AUDIO_INFO, &zero, 1);
@@ -549,7 +548,7 @@ int si46xx_dab_get_audio_info(void)
 void si46xx_dab_get_subchannel_info(void)
 {
 	uint8_t zero = 0;
-	char buf[12];
+	uint8_t buf[12];
 	printf("si46xx_dab_get_subchannel_info()\n");
 	si46xx_write_data(SI46XX_DAB_GET_SUBCHAN_INFO, &zero, 1);
 	si46xx_read(buf, sizeof(buf));
@@ -656,7 +655,7 @@ int si46xx_dab_set_freq_list(uint8_t num, uint32_t *freq_list)
 int si46xx_tune_wait(int timeout)
 {
 	int ret;
-	char buf[5];
+	uint8_t buf[5];
 
 	do {
 		ret = si46xx_read(buf, sizeof(buf));
@@ -674,7 +673,7 @@ int si46xx_dab_tune_freq(uint8_t index, uint8_t antcap)
 {
 	int ret;
 	uint8_t data[5];
-	char buf[4];
+	uint8_t buf[4];
 	uint8_t timeout;
 
 	printf("si46xx_dab_tune_freq(%d): ",index);
@@ -789,7 +788,7 @@ int si46xx_seek_start(int mode, uint8_t up, uint8_t wrap)
 static int si46xx_load_init()
 {
 	uint8_t data = 0;
-	char buf[4];
+	uint8_t buf[4];
 
 	printf("si46xx_load_init()\n");
 
@@ -838,7 +837,7 @@ static int store_image_from_file(char *filename, uint8_t wait_for_int)
 	FILE *fp;
 	uint8_t buffer[FW_LOAD_BUF];
 	size_t result;
-	char buf[4];
+	uint8_t buf[4];
 
 	fp = fopen(filename, "rb");
 	if(fp == NULL){
@@ -890,7 +889,7 @@ static int si46xx_powerup(void)
 {
 	int ret;
 	uint8_t data[15];
-	char buf[4];
+	uint8_t buf[4];
 
 	data[0] = 0x80; // ARG1
 	data[1] = (1<<4) | (7<<0); // ARG2 CLK_MODE=0x1 TR_SIZE=0x7
@@ -921,7 +920,7 @@ static int si46xx_boot(void)
 	int ret;
 	int i = 5;
 	uint8_t data = 0;
-	char buf[4];
+	uint8_t buf[4];
 
 	printf("si46xx_boot()\n");
 
@@ -938,7 +937,7 @@ int si46xx_rsq_status(int mode)
 	int khz;
 	int ret;
 	uint8_t data = 0;
-	char buf[20];
+	uint8_t buf[20];
 
 	//printf("si46xx_fm_rsq_status(%d)\n", mode);
 
@@ -976,7 +975,7 @@ int si46xx_fm_rds_blockcount(void)
 	int ret;
 	//uint8_t data = 1; // clears block counts if set
 	uint8_t data = 0; // clears block counts if set
-	char buf[10];
+	uint8_t buf[10];
 
 	printf("si46xx_rds_blockcount()\n");
 	si46xx_write_data(SI46XX_FM_RDS_BLOCKCOUNT,&data,1);
@@ -1038,7 +1037,7 @@ int si46xx_fm_rds_status(void)
 {
 	int ret;
 	uint8_t data = 0;
-	char buf[20];
+	uint8_t buf[20];
 	uint16_t timeout;
 	uint16_t blocks[4];
 
@@ -1079,7 +1078,7 @@ int si46xx_fm_rds_status(void)
 void si46xx_dab_get_service_linking_info(uint32_t service_id)
 {
 	uint8_t data[7];
-	char buf[24];
+	uint8_t buf[24];
 
 	printf("si46xx_dab_get_service_linking_info()\n");
 	data[0] = 0;
@@ -1111,7 +1110,7 @@ void si46xx_dab_digrad_status_print(struct dab_digrad_status_t *status)
 void si46xx_dab_digrad_status(struct dab_digrad_status_t *status)
 {
 	uint8_t data = (1<<3) | 1; // set digrad_ack and stc_ack
-	char buf[22];
+	uint8_t buf[22];
 	uint8_t timeout = 100;
 
 	printf("si46xx_dab_digrad_status():\n");
@@ -1169,7 +1168,7 @@ void si46xx_dab_scan()
 int si46xx_set_property(uint16_t property_id, uint16_t value)
 {
 	uint8_t data[5];
-	char buf[4];
+	uint8_t buf[4];
 	char *name;
 
 	/* fix this */
@@ -1226,7 +1225,7 @@ int si46xx_flash_property_get(int prop, int *value)
 	int i = 0;
 	int ret;
 	uint8_t data[3];
-	char buf[6];
+	uint8_t buf[6];
 
 	printf("si46xx_flash_property_get(0x%04x)\n", prop);
 	STORE_U8(0x11);
