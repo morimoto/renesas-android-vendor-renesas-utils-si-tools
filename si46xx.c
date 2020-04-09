@@ -1187,7 +1187,6 @@ int si46xx_flash_property_get(int prop, int *value)
 int si46xx_flash_write(int offset, char *ptr, int size, uint32_t crc, int verify)
 {
 	int i = 0;
-	int ret;
 	uint8_t data[MAX_BLOCK_SIZE + 16]; //header
 
 	if (size > MAX_BLOCK_SIZE)
@@ -1211,7 +1210,12 @@ int si46xx_flash_write(int offset, char *ptr, int size, uint32_t crc, int verify
 	i += size;
 
 	si46xx_write_data(SI46XX_FLASH_LOAD, data, i);
-	return si46xx_read(NULL, ret);
+	/*
+	 * si46xx_read will send RD_REPLY to check SI46XX_FLASH_LOAD status
+	 * (it has not additional field in response, read 1 status byte)
+	 * and check it for error absence.
+	 */
+	return si46xx_read(NULL, 1);
 }
 
 int si46xx_flash_load(int offset)
